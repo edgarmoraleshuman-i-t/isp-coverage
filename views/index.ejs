@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Buscar sugerencias AT&T</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    input { padding: 8px; width: 320px; }
+    button { padding: 8px 12px; }
+    pre { background:#f4f4f4; padding:10px; margin-top:10px; }
+    table { border-collapse: collapse; margin-top:10px; width: 100%; max-width: 900px; }
+    th, td { border: 1px solid #ddd; padding:8px; }
+    th { background:#eee; }
+  </style>
+</head>
+<body>
+  <h1>Buscar direcciones (AT&T)</h1>
+  <input id="search" placeholder="Ej: 2312 W College Ave" />
+  <button id="btn">Buscar</button>
+
+  <div id="out"></div>
+
+  <script>
+    document.getElementById("btn").addEventListener("click", async () => {
+      const q = document.getElementById("search").value.trim();
+      if (!q) return alert("Ingresa una dirección");
+
+      document.getElementById("out").innerHTML = "<p>Buscando...</p>";
+      try {
+        const r = await fetch(`/suggestions?search=${encodeURIComponent(q)}`);
+        if (!r.ok) {
+          const txt = await r.text();
+          document.getElementById("out").innerHTML = `<pre>Error ${r.status}: ${txt}</pre>`;
+          return;
+        }
+        const data = await r.json();
+        if (!data || !data.suggestions || data.suggestions.length === 0) {
+          document.getElementById("out").innerHTML = "<p>No se encontraron sugerencias.</p>";
+          return;
+        }
+        let html = "<table><tr><th>Calle</th><th>Secondary</th><th>Ciudad</th><th>Estado</th><th>ZIP</th><th>entries</th></tr>";
+        data.suggestions.forEach(s => {
+          html += `<tr><td>${s.street_line||""}</td><td>${s.secondary||""}</td><td>${s.city||""}</td><td>${s.state||""}</td><td>${s.zipcode||""}</td><td>${s.entries||0}</td></tr>`;
+        });
+        html += "</table>";
+        document.getElementById("out").innerHTML = html;
+      } catch (e) {
+        document.getElementById("out").innerHTML = "<pre>Request failed: " + (e.message || e) + "</pre>";
+      }
+    });
+  </script>
+</body>
+</html>
